@@ -1,165 +1,184 @@
-// All facts on the site, with their sources. Status:
-//   published: Fortell or a regulator says it about the product
-//   patent:    a Fortell patent describes it; the product can differ
-//   measured:  a third party measured it
-//   inferred:  my deduction; the note says from what
+// Text and sources for the pipeline page. Status of each value:
+//   published:   Fortell, a regulator, or a reviewer says it about the product
+//   patent:      a Fortell patent describes it; the product can differ
+//   inferred:    my choice or deduction; the text says why
+//   placeholder: a stand-in for a part I cannot rebuild
 // Full notes: spearfish/fortell/hardware-2026-11-11.md and software-2026-11-11.md (golden-path repo).
 
 const pat = (n, topic) => ({ name: `Patent ${n} (${topic})`, url: `https://patents.google.com/patent/${n}/en` });
 
 export const SRC = {
   ifu: { name: "FCC exhibit: user manual, 2025", url: "https://fccid.io/pdf.php?id=9549295" },
-  fccTest: { name: "FCC exhibit: RF test report, 2025", url: "https://fccid.io/pdf.php?id=8725669" },
-  fccPhotos: { name: "FCC exhibit: internal photos, 2025", url: "https://fccid.io/pdf.php?id=8725666" },
   ht: { name: "HearingTracker review, 2026", url: "https://www.hearingtracker.com/hearing-aids/fortell-ai-hearing-aids" },
   ai2: { name: "HearingTracker: AI 2.0, 2026", url: "https://www.hearingtracker.com/news/fortell-ai-2-0-next-level-speech-in-noise-performance-update-for-hearing-aids" },
-  hhtm: { name: "This Week in Hearing, 2026", url: "https://hearinghealthmatters.org/?p=44500" },
-  site: { name: "fortell.com/evidence", url: "https://www.fortell.com/evidence" },
   blog: { name: "Fortell blog: how AI hearing aids work", url: "https://www.fortell.com/blog/how-ai-hearing-aids-work" },
-  ija1: { name: "Int. J. Audiology, Oct 2026", url: "https://doi.org/10.1080/14992027.2026.2741760" },
-  ija2: { name: "Int. J. Audiology, May 2026", url: "https://doi.org/10.1080/14992027.2026.2663345" },
-  jobs: { name: "Fortell job posts", url: "https://jobs.ashbyhq.com/fortell" },
-  maude: { name: "FDA MAUDE reports", url: "https://api.fda.gov/device/event.json?search=device.manufacturer_d_name:fortell" },
   pChip: pat("US12423558B2", "AI chip"),
   pNN: pat("US11950056B2", "neural hearing aid"),
   pReset: pat("US20250080926A1", "frames"),
   pLat: pat("WO2026112188A1", "latency"),
-  pLow: pat("US20250211927A1", "low latency"),
   pFocus: pat("US12470880B2", "spatial focus"),
   pBeam: pat("US20250124946A1", "beam + NR"),
   pMix: pat("US20250294300A1", "mix-back"),
   pWdrc: pat("WO2026064373A1", "NR then WDRC"),
   pFb: pat("US20260143286A1", "feedback"),
+  nalr: { name: "Byrne & Dillon 1986 (NAL-R)", url: "https://doi.org/10.1097/00003446-198608000-00007" },
+  asv: { name: "Voice clips: ASVspoof 2019 (ODC-By)", url: "https://datashare.ed.ac.uk/handle/10283/3336" },
 };
 
-export const STATUS = {
-  published: "Published",
-  patent: "Patent",
-  measured: "Measured",
-  inferred: "Inferred",
-};
+export const STATUS = { published: "Published", patent: "Patent", inferred: "Inferred", placeholder: "Placeholder" };
 
-// ---------- Hardware tab ----------
-export const HARDWARE = [
-  {
-    title: "AI chip",
-    facts: [
-      { text: "16 tiles × 64 multiply-adds at 50 MHz ≈ 102 billion operations per second.", status: "patent", src: "pChip" },
-      { text: "That matches the ad line “up to 100B operations per second”, so this is very likely the shipping chip.", status: "inferred", note: "same number", src: "pChip" },
-      { text: "Up to 10 million 8-bit weights. 2–4 mW for the denoising network.", status: "patent", src: "pChip" },
-      { text: "The network does the denoising. A separate 24-bit DSP does feedback, wind, beamforming, compression, and calibration.", status: "patent", src: "pNN" },
-      { text: "Made by TSMC. A job post asks for “sub-7nm” design, likely for the next chip.", status: "published", src: "jobs" },
-    ],
-  },
-  {
-    title: "Microphones",
-    facts: [
-      { text: "2 microphones per aid, 4 in all.", status: "published", src: "ht" },
-      { text: "Two MEMS mics about 4–6 mm apart. The patents give 5–12 mm.", status: "inferred", note: "ruler in FCC photos", src: "fccPhotos" },
-      { text: "Noise floor: 29 dB SPL omni, 38 dB SPL directional.", status: "published", src: "ifu" },
-      { text: "No accelerometer and no microphone inside the ear canal.", status: "published", src: "ifu" },
-    ],
-  },
-  {
-    title: "Speaker and domes",
-    facts: [
-      { text: "Receivers: Sonion Steel Series XM and XP.", status: "published", src: "ifu" },
-      { text: "Max output 112–115 dB SPL. Max gain 55 dB. Range up to 6.2 or 7.0 kHz.", status: "published", src: "ifu" },
-      { text: "Domes: open, closed, and power; 6 to 12 mm.", status: "published", src: "ifu" },
-      { text: "Two FDA reports of domes left in ear canals.", status: "published", src: "maude" },
-    ],
-  },
-  {
-    title: "Radio",
-    facts: [
-      { text: "Bluetooth Low Energy only, 2.4 GHz, about 5.5 dBm.", status: "published", src: "fccTest" },
-      { text: "No second radio, so the two aids do not share audio.", status: "inferred", note: "FCC radio list", src: "fccTest" },
-      { text: "iPhone streaming and Auracast. No Android, no telecoil.", status: "published", src: "ht" },
-    ],
-  },
-  {
-    title: "Battery and body",
-    facts: [
-      { text: "A 10 × 5.4 mm lithium coin cell, about 50 mAh at 3.8 V.", status: "inferred", note: "label in FCC photo", src: "fccPhotos" },
-      { text: "Ads say 24+ hours. The manual says 16 hours after a 3-hour charge.", status: "published", src: "ifu" },
-      { text: "About 8 mW for the whole aid, so the AI chip uses a large share of it.", status: "inferred", note: "0.19 Wh over 24 h", src: "fccPhotos" },
-      { text: "IP54. Volume buttons on the left aid, mode button on the right.", status: "published", src: "ifu" },
-    ],
-  },
+export const PART_NAMES = { target: "Front talker", talker2: "Rear talker", noise: "Noise", wind: "Wind", clatter: "Clatter", leak: "Leak" };
+
+/** The test scene (levels in dB SPL at the aid, over the whole clip unless a time is given). */
+export const SCENE_ROWS = [
+  { part: "target", what: "Low voice, straight ahead (0°), plus its reverb from 4 sides", spl: "65" },
+  { part: "talker2", what: "High voice, behind (180°), plus its reverb", spl: "62" },
+  { part: "noise", what: "Pink noise from 8 sides, plus 29 dB SPL mic self-noise", spl: "55" },
+  { part: "wind", what: "Gust at the mic ports, 1.2–2.0 s", spl: "72" },
+  { part: "clatter", what: "Three hits from the side (90°) at 2.7 s", spl: "85" },
+  { part: "leak", what: "The aid's own output, back into the mics", spl: "—" },
 ];
 
-// ---------- Pipeline tab ----------
-export const PIPELINE = [
-  { name: "Microphones", where: "2 per aid", job: "Pick up sound at the front and rear of each aid.", params: "sample rate not published · 32 kHz fits", status: "published", src: "ht" },
-  { name: "Feedback cancel", where: "DSP", job: "Subtract the speaker sound that leaks back into the mics.", params: "adaptive leaky FIR, right after the ADC", status: "patent", src: "pFb" },
-  { name: "Wind + calibration", where: "DSP", job: "Cut wind rumble. Match the two mics.", params: "24-bit", status: "patent", src: "pNN" },
-  { name: "Beamformer", where: "DSP", job: "Point a beam to the front. Front Voices uses it to drop voices behind you.", params: "cardioid to hypercardioid · back nulled · sides −6 dB", status: "patent", src: "pBeam" },
-  { name: "STFT", where: "AI chip", job: "Cut the sound into short frames of frequencies.", params: "128-sample frame · 64-sample step (4 ms / 2 ms)", status: "patent", src: "pLat" },
-  { name: "Neural mask", where: "AI chip", job: "A recurrent network splits each frame into target speech, other speech, and noise.", params: "LSTM · ≤10M 8-bit weights · ~2 ms per run", status: "patent", src: "pFocus" },
-  { name: "Mix back", where: "AI chip", job: "Add a little noise back, so the room still sounds real.", params: "speech + a·noise · a ≈ 0.1 at 60–80 dB SPL", status: "patent", src: "pMix" },
-  { name: "Steady-noise mask", where: "DSP", job: "Remove hum and hiss that is left.", params: "minimum statistics", status: "patent", src: "pMix" },
-  { name: "Gain + compression", where: "DSP", job: "Fit the sound to the hearing loss. Gain follows the level before denoising.", params: "attack 13 ms · release 470 ms · NAL-NL2 in tests", status: "published", src: "ifu" },
-  { name: "Inverse STFT", where: "AI chip", job: "Rebuild the waveform. Calibrate the output.", params: "", status: "patent", src: "pNN" },
-  { name: "Limiter", where: "DSP", job: "Keep the output below a safe maximum.", params: "112–115 dB SPL", status: "published", src: "ifu" },
-  { name: "Receiver", where: "speaker", job: "Play the sound into the ear canal.", params: "Sonion Steel XM / XP", status: "published", src: "ifu" },
-];
-export const PIPELINE_NOTE = "Fortell says it puts “AI ahead of the traditional signal-processing chain”. Their patents give this order. A patent describes one way to build it; the product can differ.";
-export const PIPELINE_NOTE_SRC = "blog";
-
-export const LATENCY = [
-  { part: "Two frame steps", ms: "4", src: "pLow" },
-  { part: "One network run", ms: "~2", src: "pReset" },
-  { part: "Converters, buffers", ms: "~1", src: null },
-  { part: "Short path (normal)", ms: "4–10", src: "pLat", total: true },
-  { part: "Long path (very noisy rooms)", ms: "10–16", src: "pLat", total: true },
+/** The signal after each step (index = step number; 0 = the sound in the air). */
+export const NODES = [
+  { title: "Sound at the aid", domain: "Air pressure, no aid yet", unit: "spl" },
+  { title: "Mic signals", domain: "2 mics, 16 kHz · front mic shown", unit: "spl" },
+  { title: "After feedback cancel", domain: "2 mics · front mic shown", unit: "spl" },
+  { title: "After wind + calibration", domain: "2 mics · front mic shown", unit: "spl" },
+  { title: "Beam output", domain: "1 signal, 16 kHz", unit: "spl" },
+  { title: "Frames", domain: "Grid: 2 ms × 250 Hz", unit: "spl" },
+  { title: "Target stream", domain: "Grid: T · X", unit: "spl" },
+  { title: "Mixed stream", domain: "Grid", unit: "spl" },
+  { title: "After steady-noise mask", domain: "Grid", unit: "spl" },
+  { title: "After gain", domain: "Grid · level before the receiver's shape", unit: "spl" },
+  { title: "Waveform", domain: "1 signal, 16 kHz · before the receiver's shape", unit: "spl" },
+  { title: "After limiter", domain: "1 signal, 16 kHz · before the receiver's shape", unit: "spl" },
+  { title: "Sound in the ear canal", domain: "Air pressure at the eardrum", unit: "spl" },
 ];
 
-// ---------- Numbers tab ----------
-export const TILES = [
-  { value: "99 / 100", label: "Trials where listeners picked Fortell", src: "ija2" },
-  { value: "9.2 dB", label: "QuickSIN advantage over a control aid", src: "ija1" },
-  { value: "+2.13 dB", label: "AI 2.0 over AI 1.0, average SNR", src: "ai2" },
-  { value: "1.5 / 5", label: "Own-voice score: the one weak result", src: "ht" },
+export const STEPS = [
+  null,
+  {
+    name: "Microphones", where: "Mics", status: "published",
+    job: "Each mic hears every source, a little earlier or later by its direction. Wind, mic self-noise, and the aid's own output add to each mic.",
+    fn: ["mic_m[n] = Σ_s s[n − τ_m(θ_s)] + wind_m + (h_m ∗ u)[n] + noise_m", "τ = ∓ (d / 2c) · cos θ    d = 10 mm, c = 343 m/s"],
+    params: [
+      { t: "2 mics per aid.", st: "published", src: "ht" },
+      { t: "Mics 5–12 mm apart. I use 10 mm.", st: "patent", src: "pBeam" },
+      { t: "Mic self-noise 29 dB SPL.", st: "published", src: "ifu" },
+      { t: "Rear mic reads 1.5 dB hot; feedback path peaks at −30 dB near 3.2 kHz; aid output u = front mic + 25 dB, 6 ms later. Test values.", st: "inferred" },
+      { t: "Room: each talker also arrives as reverb from 4 sides (0.4 s decay, 3 dB below the direct sound). Test values.", st: "inferred" },
+      { t: "Sample rate 16 kHz. Fortell does not publish it. 128-sample frames of 4 ms give 32 kHz; I halve it so the page runs fast.", st: "inferred", src: "pLat" },
+    ],
+  },
+  {
+    name: "Feedback cancel", where: "DSP", status: "patent", bypass: true,
+    job: "Subtract a copy of the leak. The copy is the aid output u through ĥ, the canceller's model of the path from speaker to mic.",
+    fn: ["y_m[n] = mic_m[n] − (ĥ_m ∗ u)[n]", "fit:  ĥ ← ĥ + μ · e[n] · u[n] / ‖u‖²,   e = mic − ĥ ∗ u"],
+    params: [
+      { t: "Adaptive, normalized, leaky FIR, subtracted right after the converter.", st: "patent", src: "pFb" },
+      { t: "32 taps (2 ms), μ = 0.02. ĥ learns from 1 s of probe noise at fitting, then holds. The patent keeps adapting in use. On 3.5 s of speech that gives a bad ĥ, because u is a delayed copy of the input.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Wind + calibration", where: "DSP", status: "patent", bypass: true,
+    job: "Match the rear mic to the front mic. Sound from a talker is the same at both mics; wind is not. When the mics stop agreeing below 300 Hz, cut that band.",
+    fn: ["rear ← rear · 10^(−1.5/20)", "y = HP₃₀₀(x) + g(t) · LP₃₀₀(x)", "g = −20 dB if ρ < 0.6 and level > 50 dB SPL, else 0 dB", "ρ = Σ front·rear / √(Σ front² · Σ rear²)  below 300 Hz, over 30 ms"],
+    params: [
+      { t: "Wind reduction and mic calibration run in the DSP, before the beamformer.", st: "patent", src: "pNN" },
+      { t: "Coherence detector, 4th-order Linkwitz-Riley split at 300 Hz (low + high is flat), −20 dB cut.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Beamformer", where: "DSP", status: "patent", bypass: true, mode: true,
+    job: "Front Voices: subtract the rear mic, delayed by the travel time between the mics. Sound from behind cancels. An EQ makes the front response flat. All Voices: use the front mic alone.",
+    fn: ["y[n] = B · (front[n] − rear[n − τ₀]) + A · y[n − 1]", "τ₀ = d / c = 29 µs    B = 1 / (2 τ₀ f_s)", "A: 2B² / (1 − A²) = 10^(9/10)  →  EQ corner 435 Hz"],
+    params: [
+      { t: "Cardioid to hypercardioid. Back nulled, sides about −6 dB.", st: "patent", src: "pBeam" },
+      { t: "Mic noise floor 29 dB SPL omni, 38 directional: the beam adds 9 dB of mic noise. I set A to match.", st: "published", src: "ifu" },
+      { t: "All Voices uses no beam. Direction helps only when other people talk.", st: "inferred", src: "ai2" },
+      { t: "The beam nulls the rear talker's direct sound, but its reverb comes from all sides. Here the beam gains about 6 dB on the rear talker. Fortell's AI 2.0 test: Front Voices beat All Voices by about 5 dB with talkers around.", st: "inferred", src: "ai2" },
+      { t: "The front talker drops too: the EQ does not fully lift the lows below 435 Hz, and the beam also cuts that talker's reverb.", st: "inferred" },
+      { t: "Wind is different at each mic, so the beam cannot cancel it, and the EQ raises it below 435 Hz.", st: "inferred" },
+    ],
+  },
+  {
+    name: "STFT", where: "AI chip", status: "patent",
+    job: "Cut the beam output into 4 ms frames, one every 2 ms. Each frame becomes 33 frequency bins, 250 Hz apart.",
+    fn: ["X[m, k] = Σ_n w[n] · x[n + mH] · e^(−j2πkn / N)", "N = 64 (4 ms)   H = 32 (2 ms)   w = √Hann"],
+    params: [
+      { t: "4 ms window, 2 ms step. Example: 128-sample frame, 64-sample step.", st: "patent", src: "pLat" },
+      { t: "64 samples at 16 kHz is the same 4 ms.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Neural mask", where: "AI chip", status: "placeholder", maskSelect: true,
+    job: "Fortell's network gives each bin three weights: target speech T, other speech I, and noise N. I do not have the network.",
+    fn: ["T + I + N = 1    target stream = T · X", "placeholder:  T = |X_target|² / Σ_p |X_p|²"],
+    params: [
+      { t: "Masks for target speech, interfering speech, and noise.", st: "patent", src: "pFocus" },
+      { t: "Recurrent network, up to 10M 8-bit weights, about 2 ms per run.", st: "patent", src: "pChip" },
+      { t: "Placeholder: the ideal ratio mask. It reads the true parts, which a real aid never has, so it beats any network.", st: "placeholder" },
+      { t: "Classic: no network. T = max(0, 1 − 1.5 · N̂ / P), N̂ from minimum statistics (as in step 8). I = 0.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Mix back", where: "AI chip", status: "patent", bypass: true, mode: true,
+    job: "Add back some noise, so the room still sounds real. The amount follows the noise level, not the SNR, so it does not pump.",
+    fn: ["Y = T·X + b · I·X + a(L) · N·X", "b = 0 Front Voices, 1 All Voices    a = 0.1 at 60–80 dB SPL"],
+    params: [
+      { t: "a ≈ 0.1 at 60–80 dB SPL, higher outside (U-shaped). Uses level, not SNR, to avoid pumping.", st: "patent", src: "pMix" },
+      { t: "a = 0.3 at 40 and 100 dB SPL. L = level of N·X, smoothed over 100 ms.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Steady-noise mask", where: "DSP", status: "patent", bypass: true,
+    job: "Remove hum and hiss that is left. The lowest power in each bin over the last 0.8 s is the noise floor.",
+    fn: ["G[m, k] = max(10^(−12/20), 1 − 1.5 · N̂[m, k] / P[m, k])", "N̂ = min of P over 0.8 s    P = |Y|² smoothed, α = 0.9"],
+    params: [
+      { t: "A minimum-statistics mask after the mix back.", st: "patent", src: "pMix" },
+      { t: "0.8 s window, ×1.5 bias, −12 dB floor.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Gain + compression", where: "DSP", status: "published", bypass: true,
+    job: "Fit the sound to the hearing loss, in 8 bands. The gain follows the level before denoising (step 5) and goes on the denoised sound.",
+    fn: ["G_b = NAL-R(f_b) − R(f_b) + (1 − 1/CR) · (55 − max(L_b, 45))", "L_b = band level of step 5, attack 13 ms, release 470 ms", "CR = 2    0 ≤ G_b ≤ 55 dB    R = receiver response (step 12)"],
+    params: [
+      { t: "Attack 13 ms, release 470 ms, max gain 55 dB.", st: "published", src: "ifu" },
+      { t: "Gain from the input level, applied to the enhanced sound.", st: "patent", src: "pWdrc" },
+      { t: "8 channels.", st: "published", src: "ht" },
+      { t: "Test loss: 35 dB HL at 250 Hz, sloping to 65 dB HL at 6 kHz. NAL-R prescription, ratio 2, knee 45 dB SPL.", st: "inferred", src: "nalr" },
+    ],
+  },
+  {
+    name: "Inverse STFT", where: "AI chip", status: "patent",
+    job: "Turn the frames back into a waveform. Each frame goes through the window again and overlaps the next by half.",
+    fn: ["y[n] = Σ_m w[n − mH] · IFFT(Y[m])[n − mH]", "Σ_m w²[n − mH] = 1, so iSTFT(STFT(x)) = x"],
+    params: [
+      { t: "Output calibration, then the inverse STFT.", st: "patent", src: "pNN" },
+      { t: "A part's level can still change here. Gains that jump from frame to frame make a grid that no waveform matches exactly; the overlap-add smooths each jump.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Limiter", where: "DSP", status: "published", bypass: true,
+    job: "Keep the sound at the eardrum under the aid's maximum output. Look 1 ms ahead, turn down fast, come back up over 50 ms.",
+    fn: ["y[n] = g[n] · x[n]", "g[n] = min(1, p_max / max |R ∗ x| over [n, n + 1 ms]), then a 50 ms release", "p_max = √2 · 20 µPa · 10^(112/20) = 11.2 Pa"],
+    params: [
+      { t: "Max output (OSPL90) 112–115 dB SPL.", st: "published", src: "ifu" },
+      { t: "1 ms look-ahead, 50 ms release. The detector uses the receiver model, so the limit holds at the eardrum.", st: "inferred" },
+    ],
+  },
+  {
+    name: "Receiver", where: "Speaker", status: "published",
+    job: "The receiver turns the signal into sound in the ear canal. Its response is not flat; step 9 already took its shape out of the gain.",
+    fn: ["p_ear = R ∗ y   (Pa)", "R: high-pass 200 Hz, +8 dB at 2.7 kHz, low-pass 6.2 kHz"],
+    params: [
+      { t: "Sonion Steel Series XM and XP. Range up to 6.2 or 7.0 kHz.", st: "published", src: "ifu" },
+      { t: "Response shape: a typical balanced-armature receiver.", st: "inferred" },
+    ],
+  },
 ];
-export const SERIES = { f: "Fortell", o: "Comparison" };
-export const CHARTS = [
-  {
-    title: "SNR improvement in the lab",
-    unit: " dB", max: 16,
-    rows: [
-      { label: "Study 1 (n=30)", bars: [{ s: "f", v: 15.5, who: "Fortell" }, { s: "o", v: 2.3, who: "Control aid" }] },
-      { label: "Study 2 (n=20)", bars: [{ s: "f", v: 12.2, who: "Fortell" }, { s: "o", v: 5.9, who: "Best of 5 aids" }] },
-    ],
-    src: "ija1", src2: "ija2", note: "Both studies are blinded and run by the company. The control aids also use neural noise reduction.",
-  },
-  {
-    title: "Words understood in noise",
-    unit: "%", max: 100,
-    rows: [
-      { label: "At 0 dB SNR", bars: [{ s: "f", v: 80, who: "Fortell" }, { s: "o", v: 31, who: "Leading AI aid" }] },
-      { label: "At −6 dB SNR", bars: [{ s: "f", v: 50, who: "Fortell" }, { s: "o", v: 7, who: "Leading AI aid" }] },
-    ],
-    src: "site", note: "0 dB SNR: the voice and the noise are equally loud.",
-  },
-  {
-    title: "AI 2.0 SNR benefit, by mode",
-    unit: " dB", max: 12, single: true,
-    rows: [
-      { label: "Noise · All Voices", bars: [{ s: "f", v: 10.6, who: "All Voices" }] },
-      { label: "Noise · Front Voices", bars: [{ s: "f", v: 10.8, who: "Front Voices" }] },
-      { label: "Talkers · All Voices", bars: [{ s: "f", v: 5.9, who: "All Voices" }] },
-      { label: "Talkers · Front Voices", bars: [{ s: "f", v: 11.0, who: "Front Voices" }] },
-    ],
-    src: "ai2", note: "KEMAR manikin, 8 speakers in a ring. Direction adds ~5 dB only when other people talk.",
-  },
-  {
-    title: "HearAdvisor lab scores",
-    unit: "", max: 6,
-    rows: [
-      { label: "Speech in noise", bars: [{ s: "f", v: 6.0, who: "Fortell" }, { s: "o", v: 2.1, who: "Average aid" }] },
-      { label: "Music", bars: [{ s: "f", v: 4.2, who: "Fortell" }, { s: "o", v: 2.6, who: "Average aid" }] },
-      { label: "Own voice", bars: [{ s: "f", v: 1.5, who: "Fortell" }, { s: "o", v: 2.6, who: "Average aid" }] },
-    ],
-    src: "ht", note: "Tuned fit. The scale was 0–5 before Fortell scored above it.",
-  },
-];
+
+export const INTRO = "A test scene goes through 12 steps. Each step is a function, out = f(in). Change a step and every later step changes.";
+export const ORDER_NOTE = "Fortell says it puts “AI ahead of the traditional signal-processing chain”. The step order comes from their patents. A patent shows one way to build it; the product can differ.";

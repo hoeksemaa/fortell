@@ -9,10 +9,14 @@ An independent rebuild of the signal pipeline in the Fortell AI hearing aid. I b
 
 ## Site
 
-`web/` is a static site with no build step. All facts and sources are in `web/data.js`.
+`web/` is a static site with no build step.
+
+- `web/dsp/pipeline.js`: the 12 steps. Each step is a pure function, out = f(in).
+- `web/data.js`: the text, values, and sources.
 
 ```
 cd web && python3 -m http.server 8000   # run locally
+node tests/pipeline.test.mjs            # check the math
 cd web && vercel deploy --prod --yes    # deploy
 ```
 
