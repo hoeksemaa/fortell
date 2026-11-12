@@ -130,6 +130,28 @@ thead th { border-top: 0; color: var(--muted); font-weight: 500; }
 #tp-speed { min-width: 54px; font-family: var(--mono); font-weight: 500; }
 @media (min-width: 640px) { .transport { padding-inline: calc((100% - 568px) / 2); } }
 
+/* table of contents: fixed on the left; it does not scroll. Phones: a rail of numbers. Wide screens: numbers + titles. */
+.toc { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 6; width: 40px; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc button {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: min(44px, calc((100dvh - 24px) / 14));
+  padding: 0 2px; background: none; border: 0; color: var(--muted); font: 500 15px/1.2 var(--body); text-align: left; cursor: pointer;
+}
+.toc .n { flex: none; width: 36px; text-align: center; font: 500 15px/1 var(--mono); padding: 5px 0; border-radius: 5px; }
+.toc .t { display: none; white-space: nowrap; }
+.toc button:hover { color: var(--ink); }
+.toc button[aria-current="true"] { color: var(--ink); font-weight: 600; }
+.toc button[aria-current="true"] .n { background: var(--red); color: #16060a; }
+#pipeline { padding-left: 40px; }
+@media (min-width: 1080px) {
+  #pipeline { padding-left: 0; }
+  .toc { left: 12px; width: 210px; }
+  .toc button { padding: 0 8px; height: min(40px, calc((100dvh - 24px) / 14)); border-radius: 8px; }
+  .toc button[aria-current="true"] { background: var(--panel); }
+  .toc .t { display: inline; }
+}
+#pl-top, .step, .node { scroll-margin-top: 76px; }
+
 /* the chain: signal, step, signal, step, ... */
 .chain { display: grid; gap: 0; }
 .node { padding: 14px 0 6px; display: grid; gap: 6px; position: relative; }
