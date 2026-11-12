@@ -91,23 +91,11 @@ body[data-screen="pipeline"] #pipeline { display: block; }
 #pl-top { display: grid; gap: 14px; }
 .intro { color: var(--ink-2); font-size: 18px; }
 .note, .small-note { font-size: 15px; color: var(--muted); }
-.note a, .small-note a, .params a { color: var(--muted); text-underline-offset: 3px; }
-.note a:hover, .small-note a:hover, .params a:hover { color: var(--ink); }
+.note a, .small-note a, .src a { color: var(--muted); text-underline-offset: 3px; }
+.note a:hover, .small-note a:hover, .src a:hover { color: var(--ink); }
+.src { font-size: 15px; }
 #spec-legend { width: 100%; height: 42px; display: block; }
 
-table { border-collapse: collapse; width: 100%; font-size: 15px; }
-th, td { text-align: left; padding: 6px 6px; border-top: 1px solid var(--edge); vertical-align: top; }
-thead th { border-top: 0; color: var(--muted); font-weight: 500; }
-.scene td:last-child, .scene th:last-child { text-align: right; font-family: var(--mono); white-space: nowrap; }
-.scene td:nth-child(2) { color: var(--ink-2); }
-
-/* status chips */
-.legend-st { display: flex; flex-wrap: wrap; gap: 8px; }
-.st { display: inline-block; font: 500 15px/1 var(--mono); padding: 4px 7px; border: 1.5px solid; border-radius: 5px; white-space: nowrap; vertical-align: 1px; }
-.st-published { color: var(--cyan-ink); border-color: var(--cyan-ink); }
-.st-patent { color: var(--cyan-ink); border-color: var(--cyan-ink); border-style: dashed; }
-.st-inferred { color: var(--violet); border-color: var(--violet); border-style: dashed; }
-.st-placeholder { color: var(--red); border-color: var(--red); }
 
 /* segmented control and toggle */
 .seg { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -158,7 +146,6 @@ thead th { border-top: 0; color: var(--muted); font-weight: 500; }
 .node-head { display: flex; align-items: center; gap: 10px; }
 .node-head h3 { font: 600 19px/1.2 var(--body); flex: 1; min-width: 0; }
 .node-k { font: 500 15px/1 var(--mono); color: var(--cyan-ink); white-space: nowrap; }
-.dom { font-size: 15px; color: var(--muted); }
 .hear { min-height: 38px; padding: 7px 14px; font-size: 15px; }
 .hear[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #16060a; }
 canvas.spec { width: 100%; height: 168px; display: block; }
@@ -176,25 +163,17 @@ canvas.viz { width: 100%; display: block; background: var(--panel-2); border-rad
 .step-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .num { font: 600 15px/1 var(--mono); color: #16060a; background: var(--red); border-radius: 5px; padding: 5px 7px; align-self: center; }
 .step-head h3 { font: 600 21px/1.2 var(--body); }
-.where { font: 500 15px/1 var(--mono); color: var(--amber); margin-left: auto; }
-.job { color: var(--ink-2); }
-.fn {
-  margin: 0; font: 400 15px/1.55 var(--mono); color: var(--ink); background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px;
-  padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere;
+.job { color: var(--ink); }
+.eq {
+  font-size: 17px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px;
+  padding: 12px 10px; overflow-x: auto; overflow-y: hidden;
 }
+.eq .katex-display { margin: 0; }
+.eq .katex { font-size: 1.15em; }
 .ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .ph-banner { border: 1.5px solid var(--red); border-radius: 8px; padding: 10px 12px; color: var(--ink); background: rgba(255, 64, 87, 0.1); }
 .ph-banner b { color: var(--red); }
 .ph-banner[hidden] { display: none; }
-.ledger caption { caption-side: top; text-align: left; font-size: 15px; color: var(--muted); padding-bottom: 4px; }
-.ledger td { font-family: var(--mono); text-align: right; white-space: nowrap; }
-.ledger thead th:not(:first-child) { text-align: right; }
-.ledger th[scope="row"] { font-weight: 400; color: var(--ink-2); }
-.ledger td.big { color: var(--ink); font-weight: 600; }
-.ledger tr:nth-last-child(-n+2) th, .ledger tr:nth-last-child(-n+2) td { color: var(--ink); }
-.params summary { cursor: pointer; font-size: 16px; color: var(--ink-2); padding: 4px 0; }
-.params ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-.params li { font-size: 15px; color: var(--ink-2); line-height: 1.45; }
 
 body.busy .step, body.busy .node canvas { transition: opacity 0.1s; }
 body.busy .node canvas { opacity: 0.6; }

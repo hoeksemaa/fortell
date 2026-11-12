@@ -41,7 +41,7 @@ function v1(g, W, Hh, t, S) {
       g.beginPath(); g.arc(sx, sy, r, 0, 2 * Math.PI); g.stroke(); g.restore();
     }
     dot(g, sx, sy, 7, s.c);
-    const txt = L > 20 ? `${s.name} ${L.toFixed(0)} dB` : s.name;
+    const txt = s.name;
     if (s.ang === 0) label(g, txt, sx, sy - 14, { align: "center" });
     else if (s.ang === 180) label(g, txt, sx, sy + 26, { align: "center" });
     else label(g, txt, W - 6, sy - 14, { align: "right" });
@@ -55,18 +55,17 @@ function v1(g, W, Hh, t, S) {
   // leak: speaker sound back to the mics
   g.save(); g.strokeStyle = C.out; g.setLineDash([4, 4]); g.lineWidth = 1.5; g.lineDashOffset = -t * 30;
   g.beginPath(); g.moveTo(cx + 13, cy + 26); g.bezierCurveTo(cx + 48, cy + 34, cx + 48, cy - 26, cx + 13, cy - 16); g.stroke(); g.restore();
-  label(g, `leak ${levelAt(S.res[1].out.parts.leak[0], t).toFixed(0)} dB`, cx + 22, cy + 56, { color: C.ink2 });
+  label(g, "leak", cx + 22, cy + 56, { color: C.ink2 });
   // wind at the mic ports during the gust
   const wl = levelAt(S.res[1].out.parts.wind[0], t);
   if (wl > 40) {
     g.save(); g.strokeStyle = C.ink2; g.lineWidth = 1.5; g.globalAlpha = Math.min(1, (wl - 40) / 30);
     for (let j = 0; j < 4; j++) { const y = cy - 30 + j * 18, ph = t * 9 + j; g.beginPath(); for (let x = cx - 70; x <= cx - 18; x += 3) { const yy = y + 4 * Math.sin(x / 7 + ph); x === cx - 70 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); }
     g.restore();
-    label(g, `wind ${wl.toFixed(0)} dB`, cx - 74, cy + 44, { align: "right", color: C.ink2 });
+    label(g, "wind", cx - 74, cy + 44, { align: "right", color: C.ink2 });
   }
-  const tau = (P.micSpacing / P.c) * 1e6;
-  label(g, `Front sound reaches the front mic ${tau.toFixed(0)} µs early.`, 4, Hh - 8, { color: C.ink2 });
-  label(g, "Levels: dB SPL now. Talkers add reverb.", 4, Hh - 30, { color: C.ink2 });
+  label(g, "Rings: sound moving toward the aid.", 4, Hh - 30, { color: C.ink2 });
+  label(g, "Brighter rings: louder sound right now.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 2. Feedback cancel: the canceller learns the leak path ----------
@@ -76,17 +75,17 @@ function v2(g, W, Hh, t, S) {
   const w = fit.snaps[idx], tFit = idx * fit.dt;
   const amp = Math.max(...h.map(Math.abs)) * 1.3;
   const lag = (k) => (k / FS) * 1000;
-  const A = axes(g, boxIn(W, 26, 96), { x: [0, 2], y: [-amp, amp], xticks: [0, 0.5, 1, 1.5, 2], xfmt: (v) => `${v} ms`, yticks: [0], yfmt: () => "0", title: "Leak path h (amber), model ĥ (red)" });
+  const A = axes(g, boxIn(W, 26, 96), { x: [0, 2], y: [-amp, amp], xticks: [0, 0.5, 1, 1.5, 2], xfmt: (v) => `${v} ms`, yticks: [0], yfmt: () => "0", title: "Leak path (amber) and the model (red)" });
   for (let k = 0; k < h.length; k++) {
     const x = A.X(lag(k));
     g.save(); g.strokeStyle = C.ref; g.lineWidth = 2; g.beginPath(); g.moveTo(x, A.Y(0)); g.lineTo(x, A.Y(h[k])); g.stroke(); g.restore();
     dot(g, x, A.Y(w[k]), 3.5, C.out);
   }
-  const B = axes(g, boxIn(W, 178, 82), { x: [0, 1], y: [-45, 5], xticks: [0, 0.25, 0.5, 0.75, 1], xfmt: (v) => `${v} s`, yticks: [0, -20, -40], yfmt: (v) => `${v}`, title: "Model error ‖ĥ − h‖² / ‖h‖², dB" });
+  const B = axes(g, boxIn(W, 178, 82), { x: [0, 1], y: [-45, 5], xticks: [0, 0.25, 0.5, 0.75, 1], xfmt: (v) => `${v} s`, yticks: [0, -20, -40], yfmt: (v) => `${v}`, title: "How wrong the model is, dB" });
   const xs = fit.mis.map((_, i) => i * fit.dt);
   line(g, xs.slice(0, idx + 1), fit.mis.slice(0, idx + 1), B.X, B.Y, C.out, 2);
   dot(g, B.X(tFit), B.Y(fit.mis[idx]), 5, C.out);
-  label(g, `At fitting: ${tFit.toFixed(2)} s of probe noise`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "The model learns the path at fitting.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 3. Wind + calibration: coherence and the low-band gain ----------
@@ -94,15 +93,15 @@ function v3(g, W, Hh, t, S) {
   const a = S.res[3].aux;
   if (!a || !a.rho) return bypassed(g, W, Hh);
   const xs = a.rho.map((_, i) => i * a.dt), i = Math.min(a.rho.length - 1, Math.round(t / a.dt));
-  const A = timeAxes(g, boxIn(W, 26, 86), [-0.4, 1], [1, 0.6, 0], (v) => v.toFixed(1), "Mic agreement ρ below 300 Hz");
+  const A = timeAxes(g, boxIn(W, 26, 86), [-0.4, 1], [1, 0.6, 0], (v) => v.toFixed(1), "Do the mics agree? (lows only)");
   line(g, xs, a.rho, A.X, A.Y, C.in, 1.5);
   line(g, [0, DUR()], [P.windRho, P.windRho], A.X, A.Y, C.ref, 1.5, [6, 4]);
-  const B = timeAxes(g, boxIn(W, 166, 76), [-22, 2], [0, -10, -20], (v) => `${v}`, "Gain below 300 Hz, dB");
+  const B = timeAxes(g, boxIn(W, 166, 76), [-22, 2], [0, -10, -20], (v) => `${v}`, "Gain on the lows, dB");
   line(g, xs, a.gdb, B.X, B.Y, C.out, 2);
   playhead(g, A.X(t), 26, 86); playhead(g, B.X(t), 166, 76);
   dot(g, A.X(t), A.Y(a.rho[i]), 4, C.in); dot(g, B.X(t), B.Y(a.gdb[i]), 4, C.out);
-  label(g, `now ρ = ${a.rho[i].toFixed(2)}, gain ${a.gdb[i].toFixed(1)} dB`, 4, Hh - 30, { color: C.ink2 });
-  label(g, `Rear mic always −${P.mismatchDb} dB`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "Wind: the mics stop agreeing,", 4, Hh - 30, { color: C.ink2 });
+  label(g, "so the lows go down.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 4. Beamformer: polar response, sounds shrink as they pass ----------
@@ -125,13 +124,13 @@ function v4(g, W, Hh, t, S) {
     const f2 = (t * 0.8 + m.a / 360) % 1, pr = R * (1 - f2), px = cx + pr * Math.sin((m.a * Math.PI) / 180), py = cy - pr * Math.cos((m.a * Math.PI) / 180);
     const size = 7 * (1 - f2) + 7 * f2 * Math.max(0.08, 10 ** (d / 20));
     dot(g, px, py, size, m.a === 180 ? C.in : m.a === 90 ? C.ref : C.out);
-    const txt = `${m.n} ${d > -0.05 ? "0 dB" : d < -40 ? "< −40 dB" : `${d.toFixed(0)} dB`}`;
+    const txt = m.n;
     if (m.a === 0) label(g, txt, x, y - 6, { align: "center" });
     else if (m.a === 180) label(g, txt, x, y + 18, { align: "center" });
     else label(g, txt, W - 4, y - 16, { align: "right" });
   }
-  label(g, omni ? "Front mic alone: the same gain" : "Direct sound only, at 1 kHz.", 4, Hh - 30, { color: C.ink2 });
-  label(g, omni ? "from every side." : "Reverb still comes from all sides.", 4, Hh - 8, { color: C.ink2 });
+  label(g, omni ? "All Voices: no beam." : "Red line: how well the beam hears", 4, Hh - 30, { color: C.ink2 });
+  label(g, omni ? "Every side is heard the same." : "each side. The back is a hole.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 5. STFT: a 4 ms window slides; each frame becomes 33 bins ----------
@@ -141,7 +140,7 @@ function v5(g, W, Hh, t, S) {
   const span = 0.012, c = (s0 + N / 2) / FS, ta = c - span, tb = c + span;
   let pk = 1e-9; for (let i = Math.max(0, Math.round(ta * FS)); i < Math.min(x.length, Math.round(tb * FS)); i++) pk = Math.max(pk, Math.abs(x[i]));
   const ypa = pk * PA_PER_UNIT * 1.15;
-  const A = axes(g, boxIn(W, 26, 96), { x: [ta * 1000, tb * 1000], y: [-ypa, ypa], xticks: [], yticks: [0], yfmt: () => "0 Pa", title: "Beam output, Pa (24 ms)" });
+  const A = axes(g, boxIn(W, 26, 96), { x: [ta * 1000, tb * 1000], y: [-ypa, ypa], xticks: [], yticks: [0], yfmt: () => "0 Pa", title: "Sound wave, Pa (24 ms of it)" });
   const xs = [], ys = [];
   for (let i = Math.max(0, Math.round(ta * FS)); i < Math.min(x.length, Math.round(tb * FS)); i++) { xs.push((i / FS) * 1000); ys.push(x[i] * PA_PER_UNIT); }
   line(g, xs, ys, A.X, A.Y, C.in, 1.5);
@@ -150,14 +149,14 @@ function v5(g, W, Hh, t, S) {
     for (let n = 0; n < N; n++) { wx.push(((s + n) / FS) * 1000); wy.push(WIN[n] * ypa * 0.95); }
     line(g, wx, wy, A.X, A.Y, dm ? "rgba(255,182,39,0.3)" : C.ref, dm ? 1 : 2);
   }
-  label(g, `window 4 ms, step 2 ms · peak ${(pk * PA_PER_UNIT).toFixed(3)} Pa`, A.box.x0, 26 + 96 + 18, { color: C.ink2 });
-  const B = axes(g, boxIn(W, 176, 100), { x: [0, 8000], y: [0, 80], xticks: [0, 2000, 4000, 6000, 8000], xfmt: kfmt, yticks: [0, 40, 80], yfmt: (v) => `${v}`, title: "This frame, dB SPL per 250 Hz bin" });
+  label(g, "amber: the current slice", A.box.x0, 26 + 96 + 18, { color: C.ink2 });
+  const B = axes(g, boxIn(W, 176, 100), { x: [0, 8000], y: [0, 80], xticks: [0, 2000, 4000, 6000, 8000], xfmt: kfmt, yticks: [0, 40, 80], yfmt: (v) => `${v}`, title: "That slice, by frequency, dB SPL" });
   const bw = (B.box.w / K) * 0.8;
   for (let k = 0; k < K; k++) {
     const i = m * K + k, L = toSpl(binMs(X.re[i], X.im[i], k)), xx = B.X(k * BIN_HZ), yy = B.Y(Math.max(0, Math.min(80, L)));
     g.fillStyle = C.out; g.fillRect(xx - bw / 2, yy, bw, B.Y(0) - yy);
   }
-  label(g, `frame ${m}, centered at ${((m * HOP) / FS).toFixed(3)} s`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "One slice in, one column of the grid out.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 6. Masks: T, I, N over time and frequency ----------
@@ -173,7 +172,7 @@ function v6(g, W, Hh, t, S) {
     g.drawImage(imgs[key], A.box.x0, A.box.y0, A.box.w, A.box.h);
     playhead(g, A.X(t), y0, 66);
   });
-  label(g, "Black = 0, bright = 1", W - 4, Hh - 2, { align: "right", color: C.ink2 });
+  label(g, "Bright: that part of the grid is this source.", 4, Hh - 4, { color: C.ink2 });
 }
 
 // ---------- 7. Mix back: a(L) and where we are on it ----------
@@ -181,16 +180,16 @@ function v7(g, W, Hh, t, S) {
   const a = S.res[7].aux;
   if (!a) return bypassed(g, W, Hh, "Bypassed: Y = (T + I + N) · X = X");
   const i = Math.min(a.a.length - 1, frameAt(t));
-  const A = axes(g, boxIn(W, 26, 96), { x: [40, 100], y: [0, 0.35], xticks: [40, 60, 80, 100], xfmt: (v) => `${v}`, yticks: [0, 0.1, 0.2, 0.3], yfmt: (v) => v.toFixed(1), title: "Noise weight a vs. noise level L (dB SPL)" });
+  const A = axes(g, boxIn(W, 26, 96), { x: [40, 100], y: [0, 0.35], xticks: [40, 60, 80, 100], xfmt: (v) => `${v}`, yticks: [0, 0.1, 0.2, 0.3], yfmt: (v) => v.toFixed(1), title: "Noise added back (a) vs. room level, dB SPL" });
   const xs = Array.from({ length: 61 }, (_, j) => 40 + j);
   line(g, xs, xs.map(aOfLevel), A.X, A.Y, C.ref, 2);
   dot(g, A.X(Math.max(40, Math.min(100, a.L[i]))), A.Y(a.a[i]), 6, C.out);
   const ts = a.a.map((_, j) => (j * HOP) / FS);
-  const B = timeAxes(g, boxIn(W, 176, 76), [0, 0.35], [0, 0.3], (v) => v.toFixed(1), "a over time");
+  const B = timeAxes(g, boxIn(W, 176, 76), [0, 0.35], [0, 0.3], (v) => v.toFixed(1), "Noise added back (a) over time");
   line(g, ts, a.a, B.X, B.Y, C.out, 2);
   playhead(g, B.X(t), 176, 76);
-  label(g, `now L = ${a.L[i].toFixed(0)} dB SPL`, 4, Hh - 30, { color: C.ink2 });
-  label(g, `a = ${a.a[i].toFixed(2)} (${linToDb(a.a[i]).toFixed(0)} dB), b = ${a.b}`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "Least noise back at normal room levels,", 4, Hh - 30, { color: C.ink2 });
+  label(g, "more when the room is very quiet or loud.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 8. Steady-noise mask: this frame vs. the noise floor ----------
@@ -199,7 +198,7 @@ function v8(g, W, Hh, t, S) {
   if (!a) return bypassed(g, W, Hh);
   const M = S.res[8].out.M, m = Math.min(M - 1, frameAt(t));
   const db = (p, k) => toSpl(binMs(Math.sqrt(p), 0, k));
-  const A = axes(g, boxIn(W, 26, 110), { x: [0, 8000], y: [0, 80], xticks: [0, 2000, 4000, 6000, 8000], xfmt: kfmt, yticks: [0, 40, 80], yfmt: (v) => `${v}`, title: "Power P (bars), floor N̂ (line), dB SPL" });
+  const A = axes(g, boxIn(W, 26, 110), { x: [0, 8000], y: [0, 80], xticks: [0, 2000, 4000, 6000, 8000], xfmt: kfmt, yticks: [0, 40, 80], yfmt: (v) => `${v}`, title: "This slice (bars), the hum (line), dB SPL" });
   const bw = (A.box.w / K) * 0.8;
   const fl = [], fx = [];
   for (let k = 0; k < K; k++) {
@@ -208,9 +207,9 @@ function v8(g, W, Hh, t, S) {
     fx.push(k * BIN_HZ); fl.push(Math.max(0, db(a.Nh[m * K + k], k)));
   }
   line(g, fx, fl, A.X, A.Y, C.ref, 2);
-  const B = axes(g, boxIn(W, 186, 70), { x: [0, 8000], y: [-13, 1], xticks: [0, 2000, 4000, 6000, 8000], xfmt: kfmt, yticks: [0, -12], yfmt: (v) => `${v}`, title: "Gain G, dB" });
+  const B = axes(g, boxIn(W, 186, 70), { x: [0, 8000], y: [-13, 1], xticks: [0, 2000, 4000, 6000, 8000], xfmt: kfmt, yticks: [0, -12], yfmt: (v) => `${v}`, title: "Gain, dB" });
   line(g, fx, fx.map((_, k) => linToDb(a.G[m * K + k])), B.X, B.Y, C.out, 2);
-  label(g, `frame centered at ${((m * HOP) / FS).toFixed(3)} s`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "Bars near the line get turned down.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 9. Gain + compression: gain per band now, and one band's input/output ----------
@@ -218,7 +217,7 @@ function v9(g, W, Hh, t, S) {
   const a = S.res[9].aux;
   if (!a) return bypassed(g, W, Hh);
   const M = S.res[9].out.M, m = Math.min(M - 1, frameAt(t)), nb = BANDS.length;
-  const A = axes(g, { x0: 46, y0: 26, w: W - 58, h: 100 }, { x: [-0.5, nb - 0.5], y: [0, 40], xticks: [], yticks: [0, 20, 40], yfmt: (v) => `${v}`, title: "Gain per band, dB" });
+  const A = axes(g, { x0: 46, y0: 26, w: W - 58, h: 100 }, { x: [-0.5, nb - 0.5], y: [0, 40], xticks: [], yticks: [0, 20, 40], yfmt: (v) => `${v}`, title: "Gain in each of 8 bands, dB" });
   const bw = (A.box.w / nb) * 0.6;
   BANDS.forEach((b, j) => {
     const now = a.Gb[j * M + m], ref = Math.max(0, Math.min(P.maxGainDb, a.base[j] + wdrcOffset(55)));
@@ -228,18 +227,18 @@ function v9(g, W, Hh, t, S) {
     if (j % 2 === 0 || W > 420) label(g, b.fc < 1000 ? `${Math.round(b.fc / 10) * 10}` : `${(b.fc / 1000).toFixed(1)}k`, x, A.Y(0) + 18, { align: "center", color: C.ink2 });
   });
   const j = 5, Lb = a.Lb[j * M + m];
-  const B = axes(g, boxIn(W, 186, 90), { x: [20, 100], y: [20, 120], xticks: [20, 40, 60, 80, 100], xfmt: (v) => `${v}`, yticks: [40, 80, 120], yfmt: (v) => `${v}`, title: `Band ${(BANDS[j].fc / 1000).toFixed(1)} kHz, out vs. in, dB SPL` });
+  const B = axes(g, boxIn(W, 186, 90), { x: [20, 100], y: [20, 120], xticks: [20, 40, 60, 80, 100], xfmt: (v) => `${v}`, yticks: [40, 80, 120], yfmt: (v) => `${v}`, title: "One band: sound out vs. sound in, dB SPL" });
   const xs = Array.from({ length: 81 }, (_, i) => 20 + i);
   line(g, xs, xs, B.X, B.Y, C.grid, 1, [4, 4]);
   line(g, xs, xs.map((L) => L + Math.max(0, Math.min(P.maxGainDb, a.base[j] + wdrcOffset(L)))), B.X, B.Y, C.ref, 2);
   dot(g, B.X(Math.max(20, Math.min(100, Lb))), B.Y(Lb + a.Gb[j * M + m]), 6, C.out);
-  label(g, "Red: gain now. Outline: gain for 55 dB SPL in.", 4, Hh - 30, { color: C.ink2 });
-  label(g, `Band ${(BANDS[j].fc / 1000).toFixed(1)} kHz now: in ${Lb.toFixed(0)} dB SPL, gain ${a.Gb[j * M + m].toFixed(1)} dB`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "Red: gain now. Outline: gain for speech.", 4, Hh - 30, { color: C.ink2 });
+  label(g, "Louder in, less gain: the curve bends.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 10. Inverse STFT: windows overlap and sum to 1 ----------
 function v10(g, W, Hh, t, S) {
-  const A = axes(g, boxIn(W, 26, 150), { x: [0, 16], y: [0, 1.25], xticks: [0, 4, 8, 12, 16], xfmt: (v) => `${v} ms`, yticks: [0, 0.5, 1], yfmt: (v) => `${v}`, title: "w² per frame (amber), sum (red)" });
+  const A = axes(g, boxIn(W, 26, 150), { x: [0, 16], y: [0, 1.25], xticks: [0, 4, 8, 12, 16], xfmt: (v) => `${v} ms`, yticks: [0, 0.5, 1], yfmt: (v) => `${v}`, title: "Each slice's window (amber), their sum (red)" });
   const nf = 9, shown = 1 + (Math.floor(t * 4) % nf), sum = new Float32Array(Math.round(0.016 * FS) + 1);
   for (let f = 0; f < shown; f++) {
     const s = (f - 1) * HOP, xs = [], ys = [];
@@ -247,9 +246,8 @@ function v10(g, W, Hh, t, S) {
     line(g, xs, ys, A.X, A.Y, f === shown - 1 ? C.ref : "rgba(255,182,39,0.35)", f === shown - 1 ? 2 : 1);
   }
   line(g, Array.from(sum, (_, i) => (i / FS) * 1000), Array.from(sum), A.X, A.Y, C.out, 2);
-  const e = S.res[10].aux.prErrDb;
-  label(g, "Round trip on this scene:", 4, Hh - 30, { color: C.ink2 });
-  label(g, `iSTFT(STFT(x)) − x is ${e.toFixed(0)} dB below x.`, 4, Hh - 8, { color: C.ink2 });
+  label(g, "The windows add up to exactly 1,", 4, Hh - 30, { color: C.ink2 });
+  label(g, "so nothing is lost or doubled.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 11. Limiter: level at the eardrum vs. the max output ----------
@@ -257,7 +255,7 @@ function v11(g, W, Hh, t, S) {
   const a = S.res[11].aux;
   if (!a) return bypassed(g, W, Hh);
   const xs = a.before.map((_, i) => i * a.dt);
-  const A = timeAxes(g, boxIn(W, 26, 120), [40, 120], [40, 80, 112], (v) => `${v}`, "dB SPL at the eardrum: in (blue), out (red)");
+  const A = timeAxes(g, boxIn(W, 26, 120), [40, 120], [40, 80, 112], (v) => `${v}`, "Level at the eardrum: in (blue), out (red)");
   line(g, xs, a.before, A.X, A.Y, C.in, 1);
   line(g, xs, a.after, A.X, A.Y, C.out, 1.5);
   line(g, [0, DUR()], [P.mpoSpl, P.mpoSpl], A.X, A.Y, C.ref, 1.5, [6, 4]);
@@ -265,22 +263,21 @@ function v11(g, W, Hh, t, S) {
   line(g, xs, a.gr, B.X, B.Y, C.out, 2);
   playhead(g, A.X(t), 26, 120); playhead(g, B.X(t), 200, 56);
   const maxGr = Math.min(...a.gr);
-  label(g, `Peak ${a.maxPkSpl.toFixed(1)} dB SPL (limit ${P.mpoSpl}), most cut ${maxGr.toFixed(1)} dB`, 4, Hh - 30, { color: C.ink2 });
-  label(g, maxGr > -0.1 ? "No cut here. Set step 6 to Off to see it act." : "Dashed line: the max output.", 4, Hh - 8, { color: C.ink2 });
+  label(g, maxGr > -0.1 ? "Nothing reaches the limit here." : "Dashed line: the aid's max output.", 4, Hh - 30, { color: C.ink2 });
+  label(g, maxGr > -0.1 ? "Set step 6 to Off to see it work." : "Red stays under it.", 4, Hh - 8, { color: C.ink2 });
 }
 
 // ---------- 12. Receiver: its response and the pressure at the eardrum ----------
 function v12(g, W, Hh, t, S) {
   const fs = [], ds = [];
   for (let f = 100; f <= 8000; f *= 1.04) { fs.push(f); ds.push(receiverDb(f)); }
-  const A = axes(g, boxIn(W, 26, 96), { x: [100, 8000], xlog: true, y: [-30, 12], xticks: [100, 300, 1000, 3000, 8000], xfmt: (v) => (v >= 1000 ? `${v / 1000}k` : `${v}`), yticks: [-24, -12, 0, 12], yfmt: (v) => `${v}`, title: "Receiver response R, dB" });
+  const A = axes(g, boxIn(W, 26, 96), { x: [100, 8000], xlog: true, y: [-30, 12], xticks: [100, 300, 1000, 3000, 8000], xfmt: (v) => (v >= 1000 ? `${v / 1000}k` : `${v}`), yticks: [-24, -12, 0, 12], yfmt: (v) => `${v}`, title: "Speaker response, dB" });
   line(g, fs, ds.map((d) => Math.max(-30, d)), A.X, A.Y, C.ref, 2);
   const y = S.res[12].out.mix[0], span = 0.01, ta = Math.max(0, t - span), tb = Math.min(DUR(), ta + 2 * span);
   const xs = [], ys = []; let pk = 1e-9;
   for (let i = Math.round(ta * FS); i < Math.round(tb * FS); i++) { xs.push(i / FS); ys.push(y[i] * PA_PER_UNIT); pk = Math.max(pk, Math.abs(y[i] * PA_PER_UNIT)); }
-  const B = axes(g, boxIn(W, 176, 90), { x: [ta, tb], y: [-pk * 1.1, pk * 1.1], xticks: [], yticks: [0], yfmt: () => "0 Pa", title: "Pressure at the eardrum, Pa (20 ms)" });
+  const B = axes(g, boxIn(W, 176, 90), { x: [ta, tb], y: [-pk * 1.1, pk * 1.1], xticks: [], yticks: [0], yfmt: () => "0 Pa", title: "Sound wave at the eardrum, Pa (20 ms)" });
   line(g, xs, ys, B.X, B.Y, C.out, 1.5);
-  label(g, `peak ${pk < 0.1 ? pk.toFixed(3) : pk.toFixed(2)} Pa = ${(20 * Math.log10(pk / Math.SQRT2 / 20e-6)).toFixed(0)} dB SPL as a sine`, 4, Hh - 8, { color: C.ink2 });
 }
 
 export const VIEWS = [null,

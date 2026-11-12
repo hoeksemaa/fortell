@@ -2,10 +2,10 @@
 // The pipeline page runs the 12 steps in dsp/pipeline.js, draws each signal as a spectrogram,
 // animates each step (viz.js), and plays any point of the chain.
 import { parseWav } from "./dsp/core.js";
-import { buildScene, run, airSignal, ledger, toTime, spectrogram, PARTS, P } from "./dsp/pipeline.js";
-import { SRC, STATUS, PART_NAMES, SCENE_ROWS, NODES, STEPS, INTRO, ORDER_NOTE } from "./data.js";
+import { buildScene, run, airSignal, toTime, spectrogram, P } from "./dsp/pipeline.js";
+import { SRC, NODES, STEPS, INTRO, SCENE, ORDER_NOTE } from "./data.js";
 import { VIEWS } from "./viz.js";
-import { C, fit, axes, specImage, playhead, SPEC_RANGE, inferno, fmtDb } from "./plots.js";
+import { C, fit, axes, specImage, playhead, SPEC_RANGE, inferno } from "./plots.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -18,7 +18,6 @@ const ICONS = {
 };
 $$("[data-ico]").forEach((el) => { el.innerHTML = ICONS[el.dataset.ico] || ""; });
 
-const chip = (st) => `<span class="st st-${st}">${STATUS[st]}</span>`;
 function srcLink(key) {
   const s = SRC[key];
   return s ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>` : "";
@@ -143,21 +142,6 @@ function tick(ms) {
 }
 
 // ---------- page build ----------
-function ledgerRows(k) {
-  const a = k === 1 ? ledger(air) : res[k - 1].ledger, b = res[k].ledger;
-  const row = (name, x, y, unit = "") => {
-    let d = Number.isFinite(x) && Number.isFinite(y) && x > -60 && y > -60 ? y - x : NaN;
-    if (Math.abs(d) < 0.05) d = 0;
-    const big = Math.abs(d) >= 3 ? ' class="big"' : "";
-    return `<tr><th scope="row">${name}</th><td>${fmtDb(x)}</td><td>${fmtDb(y)}</td><td${big}>${Number.isFinite(d) ? (d > 0 ? "+" : d < 0 ? "−" : "") + Math.abs(d).toFixed(1) : "—"}</td></tr>`;
-  };
-  return PARTS.map((p) => row(PART_NAMES[p], a[p], b[p])).join("") + row("All", a.mix, b.mix) + row("SNR", a.snr, b.snr);
-}
-function fillLedger(k) {
-  const el = $(`#ledger-${k}`);
-  if (el) el.innerHTML = ledgerRows(k);
-}
-
 function seg(name, opts, value) {
   return `<div class="seg" role="radiogroup" aria-label="${esc(name)}">` + opts.map(([v, l]) => {
     const id = `${name}-${v}`.replace(/\W+/g, "-");
@@ -166,11 +150,9 @@ function seg(name, opts, value) {
 }
 
 function nodeHtml(k) {
-  const n = NODES[k];
   return `<section class="node" id="node-${k}">
-    <div class="node-head"><span class="node-k">${k === 0 ? "In" : k === 12 ? "Out" : `after ${k}`}</span><h3>${esc(n.title)}</h3><button class="btn hear" type="button" data-node="${k}" aria-pressed="false">Hear</button></div>
-    <p class="dom">${esc(n.domain)}</p>
-    <canvas class="spec" data-node="${k}" aria-label="Spectrogram: ${esc(n.title)}, 0 to 8 kHz over 3.5 s, color = dB SPL per 250 Hz"></canvas>
+    <div class="node-head"><span class="node-k">${k === 0 ? "In" : k === 12 ? "Out" : `after ${k}`}</span><h3>${esc(NODES[k])}</h3><button class="btn hear" type="button" data-node="${k}" aria-pressed="false">Hear</button></div>
+    <canvas class="spec" data-node="${k}" aria-label="Spectrogram: ${esc(NODES[k])}. Time left to right, frequency bottom to top, brighter is louder."></canvas>
   </section>`;
 }
 function stepHtml(k) {
@@ -178,43 +160,51 @@ function stepHtml(k) {
   const ctl = [];
   if (s.bypass) ctl.push(`<label class="tog"><input type="checkbox" data-bypass="${k}"> Bypass</label>`);
   if (s.maskSelect) ctl.push(seg("mask", [["oracle", "Placeholder"], ["classic", "Classic"], ["off", "Off"]], settings.mask));
-  const params = s.params.map((p) => `<li>${chip(p.st)} ${esc(p.t)}${p.src ? ` ${srcLink(p.src)}` : ""}</li>`).join("");
-  return `<article class="step${s.status === "placeholder" ? " is-ph" : ""}" id="step-${k}">
-    <header class="step-head"><span class="num">${k}</span><h3>${esc(s.name)}</h3><span class="where">${esc(s.where)}</span></header>
-    ${s.maskSelect ? `<p class="ph-banner" id="ph-banner"><b>Placeholder.</b> This step uses the ideal mask, computed from the true parts. It is not Fortell's network.</p>` : ""}
-    <p class="job">${esc(s.job)}</p>
-    <pre class="fn">${s.fn.map(esc).join("\n")}</pre>
+  return `<article class="step${s.placeholder ? " is-ph" : ""}" id="step-${k}">
+    <header class="step-head"><span class="num">${k}</span><h3>${esc(s.name)}</h3></header>
+    <div class="eq" data-tex="${esc(s.tex)}"></div>
+    <p class="job">${esc(s.text)}</p>
+    ${s.placeholder ? `<p class="ph-banner" id="ph-banner"><b>Placeholder.</b> ${esc(s.placeholder)}</p>` : ""}
     ${ctl.length ? `<div class="ctl">${ctl.join("")}</div>` : ""}
+    ${s.note ? `<p class="small-note">${esc(s.note)}</p>` : ""}
     <canvas class="viz" data-step="${k}" style="height:${v.h}px" aria-label="${esc(v.label)}"></canvas>
-    <table class="ledger"><caption>Level of each part, dB SPL${k <= 3 ? " (front mic)" : ""}. SNR: front talker vs. the rest, dB.</caption>
-      <thead><tr><th scope="col">Part</th><th scope="col">In</th><th scope="col">Out</th><th scope="col">Change</th></tr></thead>
-      <tbody id="ledger-${k}"></tbody></table>
-    <details class="params"><summary>Values and sources</summary><ul>${params}</ul></details>
+    <p class="src">${srcLink(s.src)}</p>
   </article>`;
+}
+/** Draw each equation with KaTeX; without KaTeX, show the TeX source. */
+function renderMath() {
+  $$(".eq[data-tex]").forEach((el) => {
+    if (window.katex) window.katex.render(el.dataset.tex, el, { displayMode: true, throwOnError: false });
+    else el.textContent = el.dataset.tex;
+  });
+  fitMath();
+}
+/** Shrink an equation that is wider than its box (narrow phones), down to 75% at most. */
+function fitMath() {
+  $$(".eq .katex").forEach((k) => {
+    const box = k.closest(".eq");
+    k.style.fontSize = "";
+    const ratio = box.clientWidth / box.scrollWidth;
+    if (ratio < 1) k.style.fontSize = `${Math.max(0.75, ratio * 0.98) * 1.15}em`;
+  });
 }
 
 function buildPage() {
-  const sceneRows = SCENE_ROWS.map((r) => `<tr><th scope="row">${esc(PART_NAMES[r.part])}</th><td>${esc(r.what)}</td><td>${esc(r.spl)}</td></tr>`).join("");
   $("#pl-top").innerHTML = `
     <p class="intro">${esc(INTRO)}</p>
-    <p class="note">${esc(ORDER_NOTE)} ${srcLink("blog")}</p>
-    <div class="legend-st">${Object.keys(STATUS).map(chip).join("")}</div>
     <section class="panel">
-      <h3>The test scene</h3>
-      <table class="scene"><thead><tr><th scope="col">Part</th><th scope="col">What</th><th scope="col">dB SPL</th></tr></thead><tbody>${sceneRows}</tbody></table>
-      <p class="small-note">${srcLink("asv")}</p>
-      <h3>Mode</h3>
+      <p>${esc(SCENE)}</p>
       ${seg("mode", [["front", "Front Voices"], ["all", "All Voices"]], settings.mode)}
-      <p class="small-note">Fortell's two modes. The mode changes steps 4 and 7.</p>
-      <h3>Color in the plots</h3>
-      <canvas id="spec-legend" aria-label="Color scale: 10 to 90 dB SPL per 250 Hz band"></canvas>
-      <p class="small-note">dB SPL in each 250 Hz band. "Hear" plays that point with the same gain everywhere, so louder means louder in the aid. Start at a low volume.</p>
-    </section>`;
+      <p class="small-note">Fortell's two modes. Front Voices drops the talker behind you.</p>
+      <canvas id="spec-legend" aria-label="Color scale of the plots: 10 to 90 dB SPL"></canvas>
+      <p class="small-note">In the plots: time goes left to right, pitch goes up, and brighter is louder.</p>
+    </section>
+    <p class="note">${esc(ORDER_NOTE)} ${srcLink("asv")}</p>`;
   let chain = nodeHtml(0);
   for (let k = 1; k <= 12; k++) chain += stepHtml(k) + nodeHtml(k);
   $("#pl-chain").innerHTML = chain;
   $$("#pipeline canvas.spec, #pipeline canvas.viz").forEach((cv) => io.observe(cv));
-  for (let k = 1; k <= 12; k++) fillLedger(k);
+  renderMath();
   drawLegend();
   buildToc();
 
@@ -277,7 +267,7 @@ function update(from) {
   document.body.classList.add("busy");
   setTimeout(() => {
     run(scene, settings, res, from);
-    for (let k = from; k <= 12; k++) { specImg[k] = null; audioBuf[k] = null; fillLedger(k); }
+    for (let k = from; k <= 12; k++) { specImg[k] = null; audioBuf[k] = null; }
     if (audio.node >= from) playNode(audio.node, clock.t);
     document.body.classList.remove("busy");
   }, 20);
@@ -335,7 +325,7 @@ function route() {
   window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
-window.addEventListener("resize", () => { if (res) drawLegend(); });
+window.addEventListener("resize", () => { if (res) { drawLegend(); fitMath(); } });
 wireTransport();
 route();
 requestAnimationFrame(tick);
