@@ -216,6 +216,7 @@ function buildPage() {
   $$("#pipeline canvas.spec, #pipeline canvas.viz").forEach((cv) => io.observe(cv));
   for (let k = 1; k <= 12; k++) fillLedger(k);
   drawLegend();
+  buildToc();
 
   $$("#pipeline .hear").forEach((b) => b.addEventListener("click", () => {
     const k = +b.dataset.node;
@@ -235,6 +236,41 @@ function buildPage() {
     update(k);
   }));
 }
+
+// ---------- table of contents: click to jump; the current section lights up as you scroll ----------
+const TOC = [
+  { id: "pl-top", n: "In", t: "Test scene" },
+  ...STEPS.slice(1).map((s, i) => ({ id: `step-${i + 1}`, n: String(i + 1), t: s.name })),
+  { id: "node-12", n: "Out", t: "Ear canal" },
+];
+const toc = { active: -1, lockUntil: 0, queued: false };
+function setActive(i) {
+  if (i === toc.active) return;
+  toc.active = i;
+  $$("#toc button").forEach((b, j) => b.setAttribute("aria-current", j === i ? "true" : "false"));
+}
+function spy() {
+  toc.queued = false;
+  if (document.body.dataset.screen !== "pipeline" || !res || performance.now() < toc.lockUntil) return;
+  const line = window.innerHeight * 0.4; // the section whose top passed this line is the current one
+  let i = 0;
+  TOC.forEach((e, j) => { const el = document.getElementById(e.id); if (el && el.getBoundingClientRect().top <= line) i = j; });
+  if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) i = TOC.length - 1;
+  setActive(i);
+}
+function buildToc() {
+  const nav = $("#toc");
+  nav.innerHTML = `<ol>${TOC.map((e, i) => `<li><button type="button" data-i="${i}" aria-label="${esc(e.t)}" aria-current="false"><span class="n" aria-hidden="true">${e.n}</span><span class="t">${esc(e.t)}</span></button></li>`).join("")}</ol>`;
+  $$("button", nav).forEach((b) => b.addEventListener("click", () => {
+    const i = +b.dataset.i;
+    setActive(i);
+    toc.lockUntil = performance.now() + 1200; // hold the highlight while the smooth scroll passes other sections
+    document.getElementById(TOC[i].id).scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+  }));
+  spy();
+}
+window.addEventListener("scroll", () => { if (!toc.queued) { toc.queued = true; requestAnimationFrame(spy); } }, { passive: true });
+window.addEventListener("scrollend", () => { toc.lockUntil = 0; spy(); });
 
 /** Rerun steps from..12, then redraw what changed. A change at step k reaches every later step. */
 function update(from) {
