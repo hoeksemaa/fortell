@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070912">
+<title>Hearing Pipeline Rebuild</title>
+<meta name="description" content="An independent rebuild of the Fortell AI hearing aid's signal pipeline from public sources, made to understand how it works.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&text=%E8%A3%9C%E8%81%B4%E5%99%A8%E4%BF%A1%E5%8F%B7%E5%87%A6%E7%90%86&display=swap">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23070912'/%3E%3Cpath d='M1 8h3l2-5 3 10 2-5h4' fill='none' stroke='%23ff4057' stroke-width='2'/%3E%3C/svg%3E">
+</head>
+<body data-screen="home">
+<div class="scan" aria-hidden="true"></div>
+
+<!-- Home: title, hero, four tabs, footer buttons -->
+<section id="home" class="screen">
+  <div class="col">
+    <div class="hud"><span>REBUILD // FR1</span><span>2026</span></div>
+    <h1 class="title">Rebuilding an AI hearing aid</h1>
+    <p class="lede">An independent replication of Fortell's DSP pipeline, built to understand how their hearing aid works.</p>
+    <div class="hero">
+      <canvas id="hero" aria-hidden="true"></canvas>
+      <span class="jp" aria-hidden="true">補聴器</span>
+    </div>
+    <nav class="menu" aria-label="tabs">
+      <a class="item" href="#/hardware"><span class="ico" data-ico="chip"></span><b>Hardware</b><span class="go" aria-hidden="true">›</span></a>
+      <a class="item" href="#/pipeline"><span class="ico" data-ico="chain"></span><b>Pipeline</b><span class="go" aria-hidden="true">›</span></a>
+      <a class="item" href="#/numbers"><span class="ico" data-ico="bars"></span><b>Numbers</b><span class="go" aria-hidden="true">›</span></a>
+      <a class="item" href="#/listen"><span class="ico" data-ico="wave"></span><b>Listen</b><span class="go" aria-hidden="true">›</span></a>
+    </nav>
+  </div>
+  <footer class="foot">
+    <p>Not affiliated with Fortell. All facts come from public pages, reviews, patents, and FCC filings.</p>
+    <div class="links">
+      <a class="btn" href="https://github.com/hoeksemaa/fortell" target="_blank" rel="noopener">View source <span aria-hidden="true">↗</span></a>
+      <a class="btn" href="https://johnhoeksema.com" target="_blank" rel="noopener">View creator <span aria-hidden="true">↗</span></a>
+    </div>
+  </footer>
+</section>
+
+<section id="hardware" class="screen">
+  <div class="col">
+    <header class="pg-head"><a href="#/" class="btn home-btn" aria-label="home">‹</a><h2>Hardware</h2><span class="jp-sm" aria-hidden="true">補聴器</span></header>
+    <p class="intro">What Fortell, the FCC, and reviewers published about the FR1 aid.</p>
+    <div class="legend-st" data-legend></div>
+    <div id="hw-body"></div>
+  </div>
+</section>
+
+<section id="pipeline" class="screen">
+  <div class="col">
+    <header class="pg-head"><a href="#/" class="btn home-btn" aria-label="home">‹</a><h2>Pipeline</h2><span class="jp-sm" aria-hidden="true">信号処理</span></header>
+    <p class="intro">The signal path from microphone to ear, in order.</p>
+    <div class="legend-st" data-legend></div>
+    <ol id="pl-body" class="chain"></ol>
+    <p class="note" id="pl-note"></p>
+    <section class="panel">
+      <h3>Delay budget</h3>
+      <div id="pl-lat"></div>
+    </section>
+  </div>
+</section>
+
+<section id="numbers" class="screen">
+  <div class="col">
+    <header class="pg-head"><a href="#/" class="btn home-btn" aria-label="home">‹</a><h2>Numbers</h2></header>
+    <p class="intro">What Fortell and reviewers published about how well it works.</p>
+    <div id="nb-tiles" class="tiles"></div>
+    <div id="nb-body"></div>
+  </div>
+</section>
+
+<section id="listen" class="screen">
+  <div class="col">
+    <header class="pg-head"><a href="#/" class="btn home-btn" aria-label="home">‹</a><h2>Listen</h2></header>
+    <p class="intro">Hear two parts of the pipeline with Fortell's published values. Use headphones.</p>
+    <label class="vol" for="vol">Volume <input type="range" id="vol" min="0" max="100" value="60"><output id="volOut">60%</output></label>
+
+    <section class="panel exp" id="exp-comp">
+      <h3>Compression at 13 ms / 470 ms</h3>
+      <p>The manual gives an attack of 13 ms and a release of 470 ms. After a loud clap, the background dips, then swells back. Reviewers call this “pumping”.</p>
+      <div class="seg" role="radiogroup" aria-label="release time">
+        <input class="vh" type="radio" name="rel" id="relPub" value="470" checked><label for="relPub">Release 470 ms</label>
+        <input class="vh" type="radio" name="rel" id="relFast" value="60"><label for="relFast">Release 60 ms</label>
+        <input class="vh" type="radio" name="rel" id="relOff" value="0"><label for="relOff">Off</label>
+      </div>
+      <canvas id="c-plot" class="plot" aria-label="Input and output level over 3 seconds with three claps."></canvas>
+      <div class="legend"><span><i class="sw sw-o"></i>Input level</span><span><i class="sw sw-f"></i>Output level</span></div>
+      <p class="read" id="c-read"></p>
+      <button class="btn btn-play" id="c-play" type="button" aria-pressed="false">Play</button>
+    </section>
+
+    <section class="panel exp" id="exp-boom">
+      <h3>Your own voice in a closed dome</h3>
+      <p>A closed dome seals the ear. Your skull shakes the trapped air, so your own voice booms. The aid cannot fix it with EQ, because that sound never goes through the aid.</p>
+      <div class="seg" role="radiogroup" aria-label="voice">
+        <input class="vh" type="radio" name="bv" id="bvLow" value="low" checked><label for="bvLow">Low voice</label>
+        <input class="vh" type="radio" name="bv" id="bvHigh" value="high"><label for="bvHigh">High voice</label>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="dome">
+        <input class="vh" type="radio" name="be" id="beOpen" value="open"><label for="beOpen">Open dome</label>
+        <input class="vh" type="radio" name="be" id="beClosed" value="closed" checked><label for="beClosed">Closed dome</label>
+        <input class="vh" type="radio" name="be" id="beAnc" value="anc"><label for="beAnc">Closed + cancel</label>
+      </div>
+      <canvas id="b-plot" class="plot" aria-label="Level of your own voice at the eardrum compared with an open ear, 50 Hz to 8 kHz."></canvas>
+      <div class="legend"><span><i class="sw sw-f"></i>Your voice at the eardrum vs. an open ear</span></div>
+      <p class="read" id="b-read"></p>
+      <button class="btn btn-play" id="b-play" type="button" aria-pressed="false">Play</button>
+      <p class="note">“Closed + cancel” needs a mic inside the ear canal. The manual lists none, so Fortell cannot do this today. Values are typical, not Fortell's. Voice clips: ASVspoof 2019 (ODC-By).</p>
+    </section>
+  </div>
+</section>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
