@@ -1,0 +1,19 @@
+# OS and editors
+.DS_Store
+.vscode/
+.idea/
+
+# Deploy and tools
+.vercel/
+.playwright-mcp/
+node_modules/
+*.log
+.env*
+
+# Python (DSP experiments)
+__pycache__/
+*.pyc
+.venv/
+
+# Audio datasets stay out of git
+data/
